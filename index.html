@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Qwerty in Motion Launcher</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one narrow column of round cards, sized for a phone held in one hand */
+:root{
+  --bg:#f3f5f7; --surface:#ffffff; --fg:#17202a; --muted:#5b6876; --line:#d6dde4;
+  --accent:#1f5fbf; --accent-fg:#ffffff; --done:#2e7d4f; --done-bg:#e3f2e8;
+  --sans:"IBM Plex Sans",-apple-system,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11161c; --surface:#1a222b; --fg:#e6ebf0; --muted:#9aa7b4; --line:#2c3743;
+  --accent:#6aa3f0; --accent-fg:#0d1620; --done:#7fd09d; --done-bg:#16301f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161c; --surface:#1a222b; --fg:#e6ebf0; --muted:#9aa7b4; --line:#2c3743;
+  --accent:#6aa3f0; --accent-fg:#0d1620; --done:#7fd09d; --done-bg:#16301f; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--sans)}
+main{max-width:560px;margin:0 auto;padding-block:20px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:16px}
+h1{font-size:22px;margin:0;text-wrap:balance;font-weight:600}
+h2{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:8px 0 0;font-weight:600}
+p{margin:0}
+.lede{color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:10px;min-width:0}
+.card.complete{border-color:var(--done)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.num{font-family:var(--mono);font-size:13px;color:var(--muted)}
+code,pre{font-family:var(--mono);font-size:13px}
+pre{margin:0;padding:10px;background:var(--bg);border:1px solid var(--line);border-radius:8px;overflow-x:auto;white-space:pre-wrap;word-break:break-all}
+.btn{flex:1 1 140px;display:flex;justify-content:center;align-items:center;gap:6px;min-height:48px;padding:10px 12px;border-radius:8px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-fg);font:600 15px var(--sans);text-decoration:none;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.done{background:var(--done-bg);border-color:var(--done);color:var(--done)}
+.btn:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.small{font-size:13px;color:var(--muted)}
+ol.phr{margin:0;padding-left:20px;font-size:13px;color:var(--muted)}
+.qr{display:flex;justify-content:center;padding:8px;background:#fff;border-radius:8px}
+.qr[hidden]{display:none!important}
+.toggles{display:flex;gap:8px;flex-wrap:wrap}
+.toggles button{flex:1 1 160px;min-height:44px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:500 14px var(--sans);cursor:pointer}
+.toggles button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+#confirm{display:flex;gap:8px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<main>
+  <header style="display:grid;gap:6px">
+    <h1>Qwerty in Motion Launcher</h1>
+    <p class="lede">Open this page on the participant's iPhone in Safari. Tap a button before each run and Monkeytype loads that run's phrases. The participant only types.</p>
+  </header>
+
+  <section class="card">
+    <h2 style="margin:0">Once per phone: Monkeytype settings</h2>
+    <p>In Monkeytype, open Settings, find <b>import/export settings</b>, tap <b>import</b>, and paste this. It turns off backspace and keeps the test going after a mistake.</p>
+    <pre id="cfg">{"confidenceMode":"max","stopOnError":"off"}</pre>
+    <div class="row"><button class="btn ghost" id="copyCfg" type="button">Copy settings</button></div>
+    <p class="small" id="copyMsg" aria-live="polite"></p>
+  </section>
+
+  <div class="toggles">
+    <button type="button" id="qrToggle" aria-pressed="false">Show QR codes</button>
+    <button type="button" id="phrToggle" aria-pressed="false">Show phrases</button>
+  </div>
+  <p class="small">Use QR codes when this page is open on your phone instead of theirs: the participant scans each code with their camera.</p>
+
+  <h2>Practice</h2>
+  <div id="practice" class="card"></div>
+
+  <h2>Rounds</h2>
+  <p class="small">Round numbers mean the 1st through 9th run of the session. Take the movement and grip for each from the participant's order sheet.</p>
+  <div id="rounds" style="display:grid;gap:12px"></div>
+
+  <section class="card">
+    <h2 style="margin:0">Next participant</h2>
+    <p class="small">Clears the ticks on this phone. Nothing else changes.</p>
+    <div class="row"><button class="btn ghost" id="reset" type="button">Reset ticks</button></div>
+    <div id="confirm" hidden><button class="btn" id="yes" type="button">Yes, clear all ticks</button><button class="btn ghost" id="no" type="button">Cancel</button></div>
+  </section>
+
+  <p class="small">63 phrases with 5 words each, drawn with seed 7470 from MacKenzie and Soukoreff's 2003 phrase set, lowercased. Each round: 2 warm-up phrases, then 5 test phrases, matching Nicolau and Jorge (2012).</p>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const DATA = {"practice":[{"phrases":["fall is my favorite season"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUAMwEMsUQBLKehAT3poDc4AnBw+lALUocVCAC6yEAjgATAuRA8CAB2GlpGBgn7k8shUoDuvOfU60IisgFYAvtNUN1AEQLbdhHuRoYhjn5CyEEE0gSoAObaUAAW9Ki8CLQo6FgSQA"},{"phrases":["the fourth edition was better"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUGACwJRADM4IAnauggEwEsYu5U6AdwCGUOgCMCMQsxABdZCARwOtMiGYEADgWGlFGLgh7k8y1eRCC4zDnQBuwjBDUBWAL6KtXHQBEChsYy5PROUASeoRjhyFExIASoAOaGUFR0qDYITijoWHJAA"},{"phrases":["the force is with you"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUGACwJRADM4AnMW5EASyjoHcPq6ATzgQQAXXYI4AE1pkQTAgAcCAQ1LsMHBP3J4ps8iB7NpdAG6qMEOQFYAvuyUcVAEQJadhJuXpWoBI5+GAHIwaEgBKgA5lpQVHSozAhWKOhYYkA"}],"rounds":[{"warmup":{"phrases":["the minimum amount of time","the algorithm is too complicated"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUGACwJRAQEtUGEIlkQBDBOCVUjnABmdGC1odqErhgDmcAE4Nq7EAyii4cOmEQAHDAzCdCAExABdDj1O0yIBQT0ETdQ41Jk8NuyADuiuYcAG6cGBB2AIwADAC+HHoMzgAiBO7KBArkQmFQBPE5GHnIhcUgBKiyhlBUdKiKCGEo6FgWQA"},"test":{"phrases":["the insulation is not working","great disturbance in the force","house with new electrical panel","they watched the entire movie","get rid of that immediately"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUGACwJRAEtUpMBDGeuVO+qO1OUshAB3OACcA1owDmdaWIJs6AEx4wIYgEYtUYWkMZ1q+kADNxeulTjQTw+tT4FhdAhgJgYY+mBYY6AA46bkY0AJ50wmxgNMqhJgSo7Ap0CHAAbvQm0gSCIN5xQnCmoUoGCAgEqmxuEQC6QmnKtGT5BAGKeRj0CA7keE0tIuKFIOl+EC0ATACsAL5CAfQdACJuPQ4EYuSmflAEC7sY+8hHJyCJ0t1QVHziCH4o6Fh1QA"}},{"warmup":{"phrases":["our silver anniversary is coming","seasoned golfers love the game"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUOCAJxRCgEsMA3A25EAQ1VQdeqidqATzoModMIgaoA5nSgFOUOKgIATOrLgYAZmwkcMcVnRgALAls4IrAXQ4I46q2RDUCAByWkjDBAykZHhOLuQgAO5w1JoczJwYEK4AjAAMAL4cngzeACIEGP6BbOS6CYqZZRiKyFU1IARyhVDmdKjRCAko6Fh2QA"},"test":{"phrases":["our life expectancy has increased","get your priorities in order","the registration period is over","completely sold out of that","head shoulders knees and toes"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUOCAJxRAwEsAzAu4gBwLBgENUwAnnQAWPKHQb9qBMQQAmdAOYFSyEAKq017agzi6YDAuLWS6+uQS35hrNdMUNY1Hobio6nXXAWmTIOAA3KzowRHYMFQIMITUoOAxfAIhVAKY6GFFU2x4kqGEqRKt-AGtUAmM6PiT4SoBdNQQfVjIQaU5XOkYEBlIyPCbLchAAdws6QJ4MCBaAJgBWAF9tBk4AEWiGHsJaMiYpqAJl-YxD5BOzkAJURUZ8ulR9BCmUdCw6oA"}},{"warmup":{"phrases":["limited warranty of two years","traveling to conferences is fun"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUDASwSsIBMUQB3AQwCd3XUYBPJuADMmMZnCa8CHKCK4A3AtVQBzEeOTg4qQQXYFUYAjI1VjIQRFQgAuhoRx6BciD0AHKaQ3VapMnnuOzmLsjBpyrBgQTmQAjAAMAL4arlTuACKKNHS65IIRUARJeRgFyMWlIPrK1FAAFkyocOwIESjoWNZAA"},"test":{"phrases":["sad to hear that news","bank transaction was not registered","the quick brown fox jumped","obligations must be met first","the objective of the exercise"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUKAQwBMV856ALAqgJ3piatORFQIB3KPQBGVVAGtObCdTAwAlnFT1BVEX1RxeINgQDmi2AX10+XAvQCOERWGl9RbOINV8AZnCL0AVhAQABwJzEDhRDEUDHmVUTRAEaF1RKz4EAl0PRTZYThZ6cN8CBUUAN1SwjzyK4lMwYysAXTS4GisyPQJgnnpIhEVSMjwEVvaQQTg2UNKqDAh2gCYAVgBfPkDFYIARAj6B03IPWagCNaOME+Rzy5ACVANIqCZ6bTYEWZR0LEagA"}},{"warmup":{"phrases":["the sum of the parts","february has an extra day"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUGACwJRCgiWRDgDM7rbmAHAQwCcYUOqwIAjfhAEBPOlV7DmvVHWIx+vOgBNesgLrMEcLbTIh+BbgV6lmGAJYJ7pMniMnyIAO5x+WugBuvBgQpgCMAAwAvjz2VgAiBA5OhPzkrMFQBDEZGFnIufkgBKgA5g5QVHSovgjBKOhYekA"},"test":{"phrases":["do not worry about this","join us on the patio","universally understood to be wrong","an excellent way to communicate","file all complaints in writing"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUAEzhRFTlORAHc4AnNgT1oEMAjOBEb4AFgEsotAFZwxqWtFpx5TGCIK0ADjxhiaTCKjEA3Amyg8s3A6kpnYcOJVrxafDU2ZtlAc14qQYjACLAJUYWYea3x9cEQEQzEwHQ8QADMxDFTLDFowRE0MHjkYSSY5Wi8xXVQ-AF0mBCcNMhA2Ak0CHVoMMQRq8jwmu3IWdmcmY0sIFoAmAFYAXyZNMU6AERC+6rNyNMsoAmX9jEPkE7PA2t6oEVp6NgRLFHQsOqA"}},{"warmup":{"phrases":["sent this by registered mail","just what the doctor ordered"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUKA1U5fACwEsoUQAjAT1YCcCBzZoV4ATVggCGjDKwBW0WiADu9cQpj0CrYXDDxurON2EERIALp0EcY+RC8ADgVWsMjBI1Jk8Vm2SWHROgA3cQwITTIARgAGAF86e0ZHABECV3chcgAzUKp4nIwqZAKikGo+Vyh6VlRDCWk0TAwzIA"},"test":{"phrases":["this watch is too expensive","spill coffee on the carpet","the aspirations of a nation","the bus was very crowded","we must redouble our efforts"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUGACwEsoUQB3AQxjCobofjgeIAcCqKDQBuBBlH40sDMHABmCghOQg4qblVXhmAJ0Gk11Hcyk09rGhvprFDZg1RWNWnQCNoDFrZDi9AJ5yenCMACYEYd46CNBGIHqRcBDuGDrJenxKcHow9AC6aghwEeQJBIKsDBg0CDSkZHjFpWRMOVFqoswYEBJkAEwArAC+atKCACIENXWEmWQK3VAEo4sYy8hrGyBCAOY1UBxqqDkI3SjoWPlAA"}},{"warmup":{"phrases":["physics and chemistry are hard","the chancellor was very boring"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUABwAsBPKASzChRAENUATVsaghBrABOtVmyEFW1cd2T4+PaajAEscIawDubFnIBuBEawBG6hqgDmIALpyEcTpLIgJlAm1JyMDAaTJ57R3IQTXVZED02DAgnAEYABgBfOUoGNwARVR8GQg0yADMoqAJkwoxi5DKKkAJLbyhqVlR1BCiUdCxrIA"},"test":{"phrases":["this phenomenon will never occur","the ventilation system is broken","mystery of the lost lagoon","the dog buried the bone","the acceptance speech was boring"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUGACwEsoUQAHKg1RVuVBgdxqwdQEAbgQBODOGEjjk+FgxGoYfAIbLODKAE9YBJLLoMARqLgBrVgwQ7CorRIBmDagQYY4sNyoDmcDbJcGABM4b2MIURoCIOd5WSNOVwC4kBUpAkYYFVQwJJAoRgICMCoeFXp4uEjUMIBdWQQ4INcyEFEMgjU3GgQaUjI8RubyEG4qmNkhFQwIFoAmAFYAX1lGGkKAEQIMHr6xcgdpqAIVw4xj5DOLkFZvHahS2TZRBGmUdCxaoA"}},{"warmup":{"phrases":["an offer you cannot refuse","the kids are very excited"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUAQ1RRDgDN6CAnWgTzglrGtTlOQhmBetAK0YAC3GCA1gEsAJlFqVhtAG4s2tYmHmFFIALqCEcReLJCCABwKUBIDPIQHyec5fIgA7nGYjQQ1KDAgrAEYABgBfQVt5ewARAhc3QlYyelCoAjjsjFzkAqKQAlQAcxcoSVo+ZgRQlHQsYyA"},"test":{"phrases":["public transit is much faster","he was wearing a sweatshirt","the assignment is due today","no exchange without a bill","the rationale behind the decision"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUABwgCMMBLMFfAJwENUp7TkR6pmCCGAAWzAGZtYBFsxEFmAdylKCbFvVQBzZm2ZRFamFBH0WPfPN1QuW1AgKoL-ZgBMIC3vFdsAns1Q4ZmJRDi1PEEVuETgICz1eGnosZhgrXnYYejhUNgwImgJTVFdU9JBXAjB+bNQQAF1eBDhK8hAWAkojZgYEbnI8ZtaySLgWUt4ANzyPcgAmAFYAX15Kei6AEQJe7hlySQwoAhWDo+RTgl5HLQYTALGEPJR0LHqgA"}},{"warmup":{"phrases":["yes you are very smart","the world is a stage"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUATwKhRErgjoEMAnAugNwNcrqgRtSyfAAsOIgO5xWGACZ0AlrRHN+MZgHMOAXREI4cjmRDsADgWbCQGRQkWkyeA0fIhprBSM7MMEYwCMAAwAviJmihYAIgS29oSs5ABmvlAEYSkYaciZ2SAEqJq2UKJ0qDKCGCjoWDpAA"},"test":{"phrases":["the generation gap gets wider","you are a wonderful example","prevailing wind from the east","all good boys deserve fudge","the winner of the race"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUGACwJRAHMDUCAnAQxgEs5U762ADnwIwodAO6cAJqzoBPOBDpsWtZCDYSeMlgDNMdYmwQCMakANUA3NpwydU9CQ6l1dLRHWrmCbWMqw+ODhXdQAjODkxdRkoVitzfSlGLxpnVGYWOjhdVPN2MFoAXXUEENoyEFUBX1J1ewROUjI8MplyEHE4FlCQGwwICoAmAFYAX3UBThqAEQIGptkyXTYMOImVtYJkTbj1Jnp7KCo6VG6EVZR0LCKgA"}},{"warmup":{"phrases":["popularity is desired by all","the capital of our nation"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUABzkswEMAnASxgE8UQmoOATAqJgwI8OAI3bIQdLBxgALAhzB1KLaRzgAzDRAYdUdGEzioQAXUkI4fciCGUChjhiYIW5PFZtkQAdzgMIpIAbtIQimQAjAAMAL6Sqg4AIgQuboR6ZJrSUATx2Ri5yAVFIASoAOYuUHL6AQjqaJgYZkA"},"test":{"phrases":["beware the ides of march","exceed the maximum speed limit","quit while you are ahead","every apple from every tree","my fingers are very cold"],"url":"https://monkeytype.com/?testSettings=NoIgxgrgzgLg9gWxAGgHYQDYeQbxDAUwA8YQAuUAIwIHcBDAJwJXwAtnkQBLAEwKhZwAZiwSMwrFsTAECPFjHai6RLgghJOUAA6z5nDGq6lOARwjGWNVlwwcQATzgQWje3XZ19IAgDcCDA6u2tp2LEIMiFL+gQpM9ghBnEJcqADmAQKcbiwxSeBwGPIAupwIcHzkIEy6dCYghgiWZHjllWQgNHAM3r50GBDMZABMAKwAvpzaXLoAIgSNxgHkQv1QBJOrGOvIWzs+6YZQkpyo3WIYKOhYxUA"}}]};
+const KEY="qim-done";
+let done={}; try{done=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(done))}catch(e){}};
+let showQR=false, showPhr=false;
+function runBlock(id,label,run){
+  const wrap=document.createElement("div"); wrap.style.cssText="display:grid;gap:8px;flex:1 1 200px;min-width:0";
+  const a=document.createElement("a"); a.className="btn"+(done[id]?" done":""); a.href=run.url; a.target="_blank"; a.rel="noopener"; a.id="btn-"+id;
+  a.textContent=(done[id]?"✓ ":"")+label;
+  a.addEventListener("click",()=>{done[id]=true;save();render()});
+  const q=document.createElement("div"); q.className="qr"; q.hidden=!showQR;
+  if(showQR && window.QRCode){ new QRCode(q,{text:run.url,width:180,height:180,correctLevel:QRCode.CorrectLevel.L}); }
+  const ol=document.createElement("ol"); ol.className="phr"; ol.hidden=!showPhr;
+  run.phrases.forEach(p=>{const li=document.createElement("li");li.textContent=p;ol.appendChild(li)});
+  wrap.append(a,q,ol); return wrap;
+}
+function render(){
+  const pr=document.getElementById("practice"); pr.innerHTML="";
+  const prow=document.createElement("div"); prow.className="row";
+  DATA.practice.forEach((r,i)=>prow.appendChild(runBlock("p"+i,"Practice "+(i+1),r)));
+  pr.append(prow);
+  const s=document.createElement("p"); s.className="small"; s.textContent="One practice phrase per block: sitting, slow walking, normal walking. Not recorded."; pr.append(s);
+  const rs=document.getElementById("rounds"); rs.innerHTML="";
+  DATA.rounds.forEach((r,i)=>{
+    const c=document.createElement("section"); c.className="card"+(done["t"+i]?" complete":"");
+    const h=document.createElement("div"); h.className="head";
+    h.innerHTML='<strong>Round '+(i+1)+'</strong><span class="num">'+(done["t"+i]?"done":"2 + 5 phrases")+'</span>';
+    const row=document.createElement("div"); row.className="row";
+    row.append(runBlock("w"+i,"Warm-up",r.warmup),runBlock("t"+i,"Test",r.test));
+    c.append(h,row); rs.append(c);
+  });
+}
+document.getElementById("qrToggle").onclick=e=>{showQR=!showQR;e.target.setAttribute("aria-pressed",showQR);e.target.textContent=showQR?"Hide QR codes":"Show QR codes";render()};
+document.getElementById("phrToggle").onclick=e=>{showPhr=!showPhr;e.target.setAttribute("aria-pressed",showPhr);e.target.textContent=showPhr?"Hide phrases":"Show phrases";render()};
+document.getElementById("copyCfg").onclick=()=>{
+  const t=document.getElementById("cfg").textContent, m=document.getElementById("copyMsg");
+  navigator.clipboard.writeText(t).then(()=>m.textContent="Copied. Paste it into Monkeytype's import box.")
+  .catch(()=>{const r=document.createRange();r.selectNodeContents(document.getElementById("cfg"));const s=getSelection();s.removeAllRanges();s.addRange(r);m.textContent="Selected. Use Copy from the menu."});
+};
+const conf=document.getElementById("confirm");
+document.getElementById("reset").onclick=()=>{conf.hidden=false};
+document.getElementById("no").onclick=()=>{conf.hidden=true};
+document.getElementById("yes").onclick=()=>{done={};save();conf.hidden=true;render()};
+render();
+</script>
+</body>
+</html>
