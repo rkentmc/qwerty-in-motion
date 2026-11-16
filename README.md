@@ -35,11 +35,11 @@ Upload the results photos by hand to the team's SharePoint results folder. Name 
 
 ## Fill the form
 
-Submit the form once per round, choosing **Round results**. You can do this during the session or afterwards from the photos.
+After the session, submit the form once per round from the uploaded photos, choosing **Round results**.
 
 - From the order sheet: participant ID, round, movement, grip.
 - From the photo: wpm, raw, acc, correct, incorrect, extra, missed.
-- From what you saw: walking errors (0 if none), whether a photo was taken, and any notes.
+- From your notes during the session: walking errors (0 if none), whether a photo was taken, and anything else worth recording.
 
 ## Next participant
 
