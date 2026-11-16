@@ -29,6 +29,10 @@ There are 9 rounds. Round 1 on the launcher is the first run of the session, wha
 
 The launcher ticks each button once tapped and marks the round done.
 
+## Upload the photos
+
+Upload the results photos by hand to the team's SharePoint results folder. Name each one with the participant ID and round, for example `P-4-07_round8.jpg`.
+
 ## Fill the form
 
 Submit the form once per round, choosing **Round results**. You can do this during the session or afterwards from the photos.
@@ -36,10 +40,6 @@ Submit the form once per round, choosing **Round results**. You can do this duri
 - From the order sheet: participant ID, round, movement, grip.
 - From the photo: wpm, raw, acc, correct, incorrect, extra, missed.
 - From what you saw: walking errors (0 if none), whether a photo was taken, and any notes.
-
-## Upload the photos
-
-Upload the results photos by hand to the team's SharePoint results folder. Name each one with the participant ID and round, for example `P-4-07_round8.jpg`.
 
 ## Next participant
 
